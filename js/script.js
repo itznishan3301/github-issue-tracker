@@ -5,11 +5,24 @@ const DEMO_CREDENTIALS = {
     password: 'admin123'
 };
 
+// State Management
+let allIssues = [];
+let filteredIssues = [];
+let currentTab = 'all';
+
 // DOM Elements
 const loginPage = document.getElementById('login-page');
+const mainPage = document.getElementById('main-page');
 const loginBtn = document.getElementById('login-btn');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
+const issuesGrid = document.getElementById('issues-grid');
+const loadingSpinner = document.getElementById('loading-spinner');
+const issueCountElement = document.getElementById('issue-count');
+const tabs = document.querySelectorAll('[data-tab]');
+const issueModal = document.getElementById('issue-modal');
+const searchInput = document.getElementById('search-input');
+const searchBtn = document.getElementById('search-btn');
 
 // Login Functionality
 function handleLogin() {
@@ -17,8 +30,9 @@ function handleLogin() {
     const password = passwordInput.value.trim();
 
     if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-        alert('Login successful!');
-        // Will redirect to main page in next commit
+        loginPage.classList.add('hidden');
+        mainPage.classList.remove('hidden');
+        loadAllIssues();
     } else {
         alert('Invalid credentials! Please use:\nUsername: admin\nPassword: admin123');
     }
@@ -37,31 +51,6 @@ usernameInput.addEventListener('keypress', (e) => {
         passwordInput.focus();
     }
 });
-
-// State Management
-let allIssues = [];
-let filteredIssues = [];
-let currentTab = 'all';
-
-// Additional DOM Elements
-const mainPage = document.getElementById('main-page');
-const issuesGrid = document.getElementById('issues-grid');
-const loadingSpinner = document.getElementById('loading-spinner');
-const issueCountElement = document.getElementById('issue-count');
-
-// Update login function to show main page
-function handleLogin() {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-        loginPage.classList.add('hidden');
-        mainPage.classList.remove('hidden');
-        loadAllIssues();
-    } else {
-        alert('Invalid credentials! Please use:\nUsername: admin\nPassword: admin123');
-    }
-}
 
 // Fetch Issues from API
 async function loadAllIssues() {
@@ -109,6 +98,7 @@ function createIssueCard(issue) {
     
     const card = document.createElement('div');
     card.className = `card bg-white shadow-md cursor-pointer hover:shadow-lg transition-shadow ${borderClass}`;
+    card.onclick = () => openIssueModal(issue);
 
     const createdDate = new Date(issue.createdAt).toLocaleDateString('en-US', {
         month: 'numeric', day: 'numeric', year: 'numeric'
@@ -122,9 +112,7 @@ function createIssueCard(issue) {
         <div class="card-body p-4">
             <div class="flex justify-between items-start">
                 <span class="${isOpen ? 'text-green-500' : 'text-purple-500'}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <i class="fas fa-exclamation-circle text-lg"></i>
                 </span>
                 <span class="badge badge-sm bg-red-500 text-white">${issue.priority}</span>
             </div>
@@ -150,9 +138,6 @@ function showLoading(show) {
 function updateIssueCount(count) {
     issueCountElement.textContent = count;
 }
-
-// Tab Elements
-const tabs = document.querySelectorAll('[data-tab]');
 
 // Filter by Tab
 function filterByTab(issues, tab) {
@@ -201,11 +186,7 @@ tabs.forEach(tab => {
     });
 });
 
-const issueModal = document.getElementById('issue-modal');
-
-// Update createIssueCard to add click handler
-// In createIssueCard function, add: card.onclick = () => openIssueModal(issue);
-
+// Modal Functions
 async function openIssueModal(issue) {
     try {
         const response = await fetch(`${API_BASE_URL}/issue/${issue.id}`);
@@ -250,9 +231,7 @@ function displayIssueModal(issue) {
     issueModal.showModal();
 }
 
-const searchInput = document.getElementById('search-input');
-const searchBtn = document.getElementById('search-btn');
-
+// Search Functions
 async function searchIssues(query) {
     if (!query.trim()) {
         filteredIssues = filterByTab(allIssues, currentTab);
